@@ -41,7 +41,9 @@ def CVE_2021_44906():
     Returns:
         None
     """
-    patchpath = input("Specify the path to package-lock.json: ")
+    patchpath = input("Specify the path to package-lock.json, leave empty for default: ")
+    if patchpath == "":
+        patchpath = "core/modules/v1/cta/package-lock.json"
 
     try:
         shutil.copy(patchpath, f'{patchpath}.bak')
