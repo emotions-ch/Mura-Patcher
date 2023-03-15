@@ -11,10 +11,12 @@ def CVE_2022_47003(mode, dir):
     Returns:
         None
     """
+
+    sucsess = False
+    textToSearch = "if ( !len(arguments.userHash) || arguments.userHash == rsUser.userHash ) {"
+    textToReplace = "if ( len(arguments.userid) && len(arguments.userHash) && arguments.userHash == rsUser.userHash ) {"
     if mode == "man":
         version = input('Are you running Mura 7.0.x or later (Y/N/C)')
-        textToSearch = "if ( !len(arguments.userHash) || arguments.userHash == rsUser.userHash ) {"
-        textToReplace = "if ( len(arguments.userid) && len(arguments.userHash) && arguments.userHash == rsUser.userHash ) {"
 
         if version == "Y":
             patchpath = "core/mura/login/loginManager.cfc"
@@ -37,7 +39,6 @@ def CVE_2022_47003(mode, dir):
         else:
             patchpath = "core/mura/login/loginManager.cfc"
 
-
     try:
         shutil.copy(patchpath, f'{patchpath}.bak')
         with fileinput.FileInput(patchpath, inplace=True, backup='.bak') as file:
@@ -46,11 +47,11 @@ def CVE_2022_47003(mode, dir):
                 sucsess = True
 
         if sucsess:
-            print("Patch successful! Good Job :3\n")
+            print(f"{dir}: CVE-2022-47003, Patch successful! Good Job :3\n")
         else:
-            print("File found, but nothing changed")
+            print(f"{dir}: CVE-2022-47003, File found, but nothing changed")
     except(FileNotFoundError):
-        print("FileNotFoundError: This means the file is not found\n")
+        print(f"{dir}: CVE-2022-47003, FileNotFoundError: This means the file is not found\n")
 
 
 def CVE_2021_44906(mode, dir):
@@ -74,7 +75,6 @@ def CVE_2021_44906(mode, dir):
         else:
             patchpath = "core/modules/v1/cta/package-lock.json"
 
-
     try:
         shutil.copy(patchpath, f'{patchpath}.bak')
         # Open the file for reading
@@ -96,11 +96,11 @@ def CVE_2021_44906(mode, dir):
         with open(patchpath, 'w') as file:
             file.writelines(lines)
         if sucsess:
-            print("Patch successful! Good Job :3\n")
+            print(f"{dir}: CVE-2021-44906, Patch successful! Good Job :3\n")
         else:
-            print("File found, but nothing changed")
+            print(f"{dir}: CVE-2021-44906, File found, but nothing changed")
     except(FileNotFoundError):
-        print("FileNotFoundError: This means the file is not found\n")
+        print(f"{dir}: CVE-2021-44906, FileNotFoundError: This means the file is not found\n")
 
 
 def title():
@@ -129,7 +129,8 @@ title()
 
 mode = ""
 while mode != "man" and mode != "auto":
-    mode = input("Which mode do u want to run the script in?\n>bulk-patcher from /home [1]\n>single mode from /wwwroot [2]: \n")
+    mode = input(
+        "Which mode do u want to run the script in?\n>bulk-patcher from /home [1]\n>single mode from /wwwroot [2]: \n")
     if mode != "1" and mode != "1":
         print("Invalid Mode\n")
     elif mode == "2":
