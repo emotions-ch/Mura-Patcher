@@ -131,7 +131,7 @@ mode = ""
 while mode != "man" and mode != "auto":
     mode = input(
         "Which mode do u want to run the script in?\n>bulk-patcher from /home [1]\n>single mode from /wwwroot [2]: \n")
-    if mode != "1" and mode != "1":
+    if mode != "1" and mode != "2":
         print("Invalid Mode\n")
     elif mode == "2":
         while True:
@@ -150,6 +150,7 @@ while mode != "man" and mode != "auto":
             elif patch == 0:
                 CVE_2021_44906("man", None)
                 CVE_2022_47003("man", None)
+            exit()
     elif mode == "1":
         # Get the current working directory
         cwd = os.getcwd()
