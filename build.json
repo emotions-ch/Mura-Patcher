@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "C:/Users/Ori/Documents/Mura-Patcher/patcher.py"
+   "value": "D:/Mura-Patcher/patcher.py"
   },
   {
    "optionDest": "onefile",
@@ -19,11 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "C:/Users/Ori/Documents/Mura-Patcher/mura patcher.ico"
-  },
-  {
-   "optionDest": "ascii",
-   "value": false
+   "value": "D:/Mura-Patcher/mura patcher.ico"
   },
   {
    "optionDest": "clean_build",
@@ -42,10 +38,6 @@
    "value": false
   },
   {
-   "optionDest": "embed_manifest",
-   "value": true
-  },
-  {
    "optionDest": "uac_admin",
    "value": false
   },
@@ -54,11 +46,7 @@
    "value": false
   },
   {
-   "optionDest": "win_private_assemblies",
-   "value": false
-  },
-  {
-   "optionDest": "win_no_prefer_redirects",
+   "optionDest": "argv_emulation",
    "value": false
   },
   {
@@ -66,8 +54,8 @@
    "value": false
   },
   {
-   "optionDest": "argv_emulation",
-   "value": false
+   "optionDest": "datas",
+   "value": "D:/Mura-Patcher/patches;patches/"
   }
  ],
  "nonPyinstallerOptions": {
