@@ -3,6 +3,54 @@ import fileinput
 import shutil
 import subprocess
 import glob
+import csv
+import datetime
+
+
+def log_patch_result(csv_filename, project_name, project_path, mura_version, cve_2021_44906_result, cve_2021_44906_output, cve_2022_47003_result, cve_2022_47003_output, git_patches_result, git_patches_output, overall_success):
+    """
+    Log patch results to a CSV file with separate columns for each action.
+
+    Args:
+        csv_filename (str): Name of the CSV file to write to
+        project_name (str): Name of the project directory
+        project_path (str): Full path to the project
+        mura_version (str): Detected Mura version or 'Unknown'
+        cve_2021_44906_result (str): Result of CVE-2021-44906 patch ('Success', 'Failed', 'Not Applied')
+        cve_2021_44906_output (str): Output message from CVE-2021-44906 patch
+        cve_2022_47003_result (str): Result of CVE-2022-47003 patch ('Success', 'Failed', 'Not Applied')
+        cve_2022_47003_output (str): Output message from CVE-2022-47003 patch
+        git_patches_result (str): Result of git patch files ('Success', 'Failed', 'Not Applied')
+        git_patches_output (str): Output message from git patch files
+        overall_success (bool): Overall success status
+    """
+    file_exists = os.path.exists(csv_filename)
+
+    with open(csv_filename, 'a', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['timestamp', 'project_name', 'project_path', 'mura_version',
+                     'cve_2021_44906_result', 'cve_2021_44906_output',
+                     'cve_2022_47003_result', 'cve_2022_47003_output',
+                     'git_patches_result', 'git_patches_output',
+                     'overall_success']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        # Write header if file is new
+        if not file_exists:
+            writer.writeheader()
+
+        writer.writerow({
+            'timestamp': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'project_name': project_name,
+            'project_path': project_path,
+            'mura_version': mura_version or 'Unknown',
+            'cve_2021_44906_result': cve_2021_44906_result,
+            'cve_2021_44906_output': cve_2021_44906_output,
+            'cve_2022_47003_result': cve_2022_47003_result,
+            'cve_2022_47003_output': cve_2022_47003_output,
+            'git_patches_result': git_patches_result,
+            'git_patches_output': git_patches_output,
+            'overall_success': overall_success
+        })
 
 
 def CVE_2022_47003(mode, dir):
@@ -11,10 +59,11 @@ def CVE_2022_47003(mode, dir):
     Prompts the user to specify the path to the loginManager.cfc file, based on the version of Mura CMS.
 
     Returns:
-        None
+        tuple: (bool, str) - (success status, output message)
     """
 
     sucsess = False
+    output_msg = ""
     textToSearch = "if ( !len(arguments.userHash) || arguments.userHash == rsUser.userHash ) {"
     textToReplace = "if ( len(arguments.userid) && len(arguments.userHash) && arguments.userHash == rsUser.userHash ) {"
     if mode == "man":
@@ -49,22 +98,29 @@ def CVE_2022_47003(mode, dir):
                 sucsess = True
 
         if sucsess:
+            output_msg = f"CVE-2022-47003 patch applied successfully to {patchpath}"
             print(f"{dir}: CVE-2022-47003, Patch successful! Good Job :3\n")
+            return True, output_msg
         else:
+            output_msg = f"CVE-2022-47003 file found at {patchpath}, but no changes were made"
             print(f"{dir}: CVE-2022-47003, File found, but nothing changed")
+            return False, output_msg
     except(FileNotFoundError):
+        output_msg = f"CVE-2022-47003 FileNotFoundError: loginManager.cfc not found at expected locations"
         print(f"{dir}: CVE-2022-47003, FileNotFoundError: This means the file is not found\n")
+        return False, output_msg
 
 
 def CVE_2021_44906(mode, dir):
-    sucsess = False
     """
     A function that patches package-lock.json file for CVE-2021-44906 vulnerability.
     Prompts the user to specify the path to the package-lock.json file.
 
     Returns:
-        None
+        tuple: (bool, str) - (success status, output message)
     """
+    sucsess = False
+    output_msg = ""
     if mode == "man":
         patchpath = input("Specify the path to package-lock.json, leave empty for default: ")
         if patchpath == "":
@@ -97,12 +153,19 @@ def CVE_2021_44906(mode, dir):
         # Open the file for writing and write the modified lines back to it
         with open(patchpath, 'w') as file:
             file.writelines(lines)
+
         if sucsess:
+            output_msg = f"CVE-2021-44906 patch applied successfully to {patchpath}, minimist updated to 1.2.8"
             print(f"{dir}: CVE-2021-44906, Patch successful! Good Job :3\n")
+            return True, output_msg
         else:
+            output_msg = f"CVE-2021-44906 file found at {patchpath}, but minimist section not found or already patched"
             print(f"{dir}: CVE-2021-44906, File found, but nothing changed")
+            return False, output_msg
     except(FileNotFoundError):
+        output_msg = f"CVE-2021-44906 FileNotFoundError: package-lock.json not found at expected locations"
         print(f"{dir}: CVE-2021-44906, FileNotFoundError: This means the file is not found\n")
+        return False, output_msg
 
 
 def detect_mura_version(project_dir):
@@ -127,7 +190,7 @@ def detect_mura_version(project_dir):
                     package_data = json.load(f)
                     version = package_data.get("version", "")
                     if version.startswith("7.5"):
-                        return "7.4"
+                        return "7.5"
                     elif version.startswith("7.4"):
                         return "7.4"
                     elif version.startswith("7.3"):
@@ -149,9 +212,10 @@ def apply_patch_files(mode, project_dir, version=None):
         version (str): Mura version (7.2, 7.3, 7.4) - auto-detected if None
 
     Returns:
-        None
+        tuple: (bool, str) - (success status, output message)
     """
     success = False
+    output_messages = []
 
     # Get the current script directory to find patches
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -159,7 +223,7 @@ def apply_patch_files(mode, project_dir, version=None):
 
     if not os.path.exists(patches_dir):
         print(f"{project_dir}: Patch files directory not found at {patches_dir}")
-        return
+        return False
 
     # Detect version if not provided
     if not version:
@@ -170,19 +234,19 @@ def apply_patch_files(mode, project_dir, version=None):
 
             else:
                 print(f"{project_dir}: Could not detect Mura version, skipping patch application")
-                return
+                return False
 
     version_patches_dir = os.path.join(patches_dir, version)
     if not os.path.exists(version_patches_dir):
         print(f"{project_dir}: No patches found for version {version}")
-        return
+        return False
 
     # Find all .diff files in the version directory
     patch_files = glob.glob(os.path.join(version_patches_dir, "*.diff"))
 
     if not patch_files:
         print(f"{project_dir}: No patch files found for version {version}")
-        return
+        return False
 
     # Determine the project root (check for common Mura structures)
     project_root = project_dir
@@ -213,12 +277,11 @@ def apply_patch_files(mode, project_dir, version=None):
             )
 
             if result.returncode == 0:
-                print(f"    ✓ Patch {patch_name} applied successfully")
+                msg = f"Patch {patch_name} applied successfully"
+                print(f"    ✓ {msg}")
+                output_messages.append(msg)
                 success = True
             else:
-                print(f"    ✗ Failed to apply patch {patch_name}")
-                print(f"    Error: {result.stderr}")
-
                 # Try with different options if first attempt fails
                 result2 = subprocess.run(
                     ["git", "apply", "--reject", "--ignore-space-change", patch_file],
@@ -229,20 +292,32 @@ def apply_patch_files(mode, project_dir, version=None):
                 )
 
                 if result2.returncode == 0:
-                    print(f"    ✓ Patch {patch_name} applied with rejects (manual review needed)")
+                    msg = f"Patch {patch_name} applied with rejects (manual review needed)"
+                    print(f"    ✓ {msg}")
+                    output_messages.append(msg)
                     success = True
                 else:
-                    print(f"    ✗ Patch {patch_name} failed completely")
+                    msg = f"Patch {patch_name} failed: {result.stderr.strip()}"
+                    print(f"    ✗ {msg}")
+                    output_messages.append(msg)
 
         except subprocess.TimeoutExpired:
-            print(f"    ✗ Timeout applying patch {patch_name}")
+            msg = f"Timeout applying patch {patch_name}"
+            print(f"    ✗ {msg}")
+            output_messages.append(msg)
         except Exception as e:
-            print(f"    ✗ Error applying patch {patch_name}: {str(e)}")
+            msg = f"Error applying patch {patch_name}: {str(e)}"
+            print(f"    ✗ {msg}")
+            output_messages.append(msg)
+
+    final_output = "; ".join(output_messages) if output_messages else "No patches found or applied"
 
     if success:
         print(f"{project_dir}: Patch application completed! Some patches may require manual review.\n")
     else:
         print(f"{project_dir}: No patches were successfully applied\n")
+
+    return success, final_output
 
 
 def title():
@@ -304,15 +379,73 @@ while mode != "man" and mode != "auto":
                                 ">CVE-2021-44906: Prototype Pollution via Minimist[2]\n"
                                 ">Apply Patch Files (Git Diff)[3]\n"
                                 ">All CVEs[0]:\n"))
+
+        # Generate CSV filename with timestamp
+        timestamp = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        csv_filename = f"patch_results_{timestamp}.csv"
+
+        print(f"\nStarting bulk patching. Results will be logged to: {csv_filename}\n")
+
         for item in os.listdir(cwd):
+            print(item)
             if os.path.isdir(os.path.join(cwd, item)):
-                if patch_choice == 1:
-                    CVE_2022_47003("auto", item)
-                elif patch_choice == 2:
-                    CVE_2021_44906("auto", item)
-                elif patch_choice == 3:
-                    apply_patch_files("auto", item)
-                elif patch_choice == 0:
-                    CVE_2021_44906("auto", item)
-                    CVE_2022_47003("auto", item)
-                    apply_patch_files("auto", item)
+                project_path = os.path.abspath(os.path.join(cwd, item))
+                mura_version = detect_mura_version(project_path)
+
+                # Initialize results for all actions
+                cve_2021_result, cve_2021_output = "Not Applied", ""
+                cve_2022_result, cve_2022_output = "Not Applied", ""
+                git_patches_result, git_patches_output = "Not Applied", ""
+
+                overall_success = False
+
+                try:
+                    if patch_choice == 1:
+                        success, output = CVE_2022_47003("auto", item)
+                        cve_2022_result = "Success" if success else "Failed"
+                        cve_2022_output = output
+                        overall_success = success
+                    elif patch_choice == 2:
+                        success, output = CVE_2021_44906("auto", item)
+                        cve_2021_result = "Success" if success else "Failed"
+                        cve_2021_output = output
+                        overall_success = success
+                    elif patch_choice == 3:
+                        success, output = apply_patch_files("auto", item)
+                        git_patches_result = "Success" if success else "Failed"
+                        git_patches_output = output
+                        overall_success = success
+                    elif patch_choice == 0:
+                        # Apply all patches and track individual results
+                        success1, output1 = CVE_2021_44906("auto", item)
+                        success2, output2 = CVE_2022_47003("auto", item)
+                        success3, output3 = apply_patch_files("auto", item)
+
+                        cve_2021_result = "Success" if success1 else "Failed"
+                        cve_2021_output = output1
+                        cve_2022_result = "Success" if success2 else "Failed"
+                        cve_2022_output = output2
+                        git_patches_result = "Success" if success3 else "Failed"
+                        git_patches_output = output3
+
+                        overall_success = success1 or success2 or success3
+                except Exception as e:
+                    print(f"Error processing {item}: {str(e)}")
+
+                # Log the result with separate columns
+                log_patch_result(
+                    csv_filename,
+                    item,
+                    project_path,
+                    mura_version,
+                    cve_2021_result,
+                    cve_2021_output,
+                    cve_2022_result,
+                    cve_2022_output,
+                    git_patches_result,
+                    git_patches_output,
+                    overall_success
+                )
+
+        print(f"\nBulk patching completed! Results logged to: {csv_filename}")
+        print(f"Check the CSV file for detailed results of each project.")
