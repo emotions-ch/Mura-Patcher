@@ -7,7 +7,7 @@
   },
   {
    "optionDest": "filenames",
-   "value": "D:/Mura-Patcher/patcher.py"
+   "value": "patcher.py"
   },
   {
    "optionDest": "onefile",
@@ -19,7 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "D:/Mura-Patcher/mura patcher.ico"
+   "value": "mura patcher.ico"
   },
   {
    "optionDest": "clean_build",
@@ -55,7 +55,7 @@
   },
   {
    "optionDest": "datas",
-   "value": "D:/Mura-Patcher/patches;patches/"
+   "value": "patches;patches/"
   }
  ],
  "nonPyinstallerOptions": {
