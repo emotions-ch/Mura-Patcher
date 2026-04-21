@@ -371,7 +371,7 @@ while mode != "man" and mode != "auto":
             elif patch == 0:
                 CVE_2021_44906("man", None)
                 CVE_2022_47003("man", None)
-            exit()
+            os._exit(0)
     elif mode == "1":
         cwd = os.getcwd()
         patch_choice = int(input("Which Patch would you like to apply to all folders?\n"
